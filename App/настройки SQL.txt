@@ -1,0 +1,13 @@
+CREATE DATABASE user_service_db;
+
+CREATE SEQUENCE user_id_seq
+    START WITH 10000000000
+    INCREMENT BY 1;
+
+CREATE TABLE users (
+                       id BIGINT PRIMARY KEY DEFAULT nextval('user_id_seq'),
+                       name VARCHAR(255) NOT NULL,
+                       email VARCHAR(255) NOT NULL UNIQUE,
+                       age INTEGER NOT NULL,
+                       created_at TIMESTAMP NOT NULL DEFAULT NOW()
+);
