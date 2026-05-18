@@ -1,178 +1,107 @@
-import dao.UserDao;
-import dao.UserDaoImpl;
 import entity.User;
-import util.HibernateUtil;
+import service.UserService;
+import service.UserServiceImpl;
+import dao.UserDaoImpl;
 
-import java.util.List;
-import java.util.Optional;
+import java.util.Properties;
 import java.util.Scanner;
 
 public class App {
 
-    private static final UserDao userDao = new UserDaoImpl();
-    private static final Scanner scanner = new Scanner(System.in);
+    private final UserService service = new UserServiceImpl(new UserDaoImpl());
+    private final Scanner scanner = new Scanner(System.in);
 
-    public static void main(String[] args) {
+    public void start() {
+        while (true) {
+            System.out.println("\n=== User Service ===");
+            System.out.println("1. Создать пользователя");
+            System.out.println("2. Найти пользователя по ID");
+            System.out.println("3. Показать всех пользователей");
+            System.out.println("4. Обновить пользователя");
+            System.out.println("5. Удалить пользователя");
+            System.out.println("0. Выход");
+            System.out.print("Выберите действие: ");
 
-        boolean running = true;
+            int cmd = Integer.parseInt(scanner.nextLine());
 
-        while (running) {
-            printMenu();
-            String choice = scanner.nextLine();
-
-            try {
-                switch (choice) {
-                    case "1": createUser(); break;
-                    case "2": getUserById(); break;
-                    case "3": listUsers(); break;
-                    case "4": updateUser(); break;
-                    case "5": deleteUser(); break;
-                    case "0": running = false; break;
-                    default: System.out.println("Неизвестная команда");
-                }
-
-            } catch (RuntimeException e) {
-                System.out.println("\n=== ОШИБКА ===");
-                System.out.println(e.getMessage());
-                System.out.println("==============\n");
+            switch (cmd) {
+                case 1 -> createUser();
+                case 2 -> findUser();
+                case 3 -> listUsers();
+                case 4 -> updateUser();
+                case 5 -> deleteUser();
+                case 0 -> System.exit(0);
             }
         }
-
-        HibernateUtil.shutdown();
     }
 
-    private static void printMenu() {
-        System.out.println("\n=== User Service ===");
-        System.out.println("1. Создать пользователя");
-        System.out.println("2. Найти пользователя по ID");
-        System.out.println("3. Показать всех пользователей");
-        System.out.println("4. Обновить пользователя");
-        System.out.println("5. Удалить пользователя");
-        System.out.println("0. Выход");
-        System.out.print("Выберите действие: ");
-    }
-
-    private static void createUser() {
-
+    private void createUser() {
         System.out.print("Имя: ");
         String name = scanner.nextLine();
 
         System.out.print("Email: ");
         String email = scanner.nextLine();
 
-        Integer age = null;
+        System.out.print("Возраст: ");
+        int age = Integer.parseInt(scanner.nextLine());
 
-        while (age == null) {
-            System.out.print("Возраст (обязательно): ");
-            String ageStr = scanner.nextLine();
-
-            if (ageStr.isBlank()) {
-                System.out.println("\nВозраст обязателен.");
-                System.out.println("1 — ввести возраст");
-                System.out.println("2 — вернуться в меню");
-                System.out.print("Выберите действие: ");
-
-                String choice = scanner.nextLine();
-                if (choice.equals("2")) return;
-                continue;
-            }
-
-            try {
-                age = Integer.parseInt(ageStr);
-            } catch (NumberFormatException e) {
-                System.out.println("Возраст должен быть числом.");
-            }
-        }
-
-        User user = new User(name, email, age);
-        userDao.create(user);
-
-        System.out.println("Пользователь создан: " + user);
+        service.createUser(new User(name, email, age));
+        System.out.println("Пользователь создан");
     }
 
-    private static void getUserById() {
+    private void findUser() {
         System.out.print("ID: ");
-        Long id = Long.parseLong(scanner.nextLine());
+        long id = Long.parseLong(scanner.nextLine());
 
-        Optional<User> userOpt = userDao.findById(id);
-
-        userOpt.ifPresentOrElse(
-                u -> System.out.println("Найден: " + u),
-                () -> System.out.println("Пользователь не найден")
-        );
+        System.out.println(service.getUserById(id));
     }
 
-    private static void listUsers() {
-        List<User> users = userDao.findAll();
+    private void listUsers() {
+        service.getAllUsers().forEach(System.out::println);
+    }
 
-        if (users.isEmpty()) {
-            System.out.println("Пользователей нет");
-        } else {
-            users.forEach(System.out::println);
+    private void updateUser() {
+        System.out.print("ID: ");
+        long id = Long.parseLong(scanner.nextLine());
+
+        User user = service.getUserById(id);
+
+        System.out.print("Новое имя: ");
+        user.setName(scanner.nextLine());
+
+        System.out.print("Новый email: ");
+        user.setEmail(scanner.nextLine());
+
+        System.out.print("Новый возраст: ");
+        user.setAge(Integer.parseInt(scanner.nextLine()));
+
+        service.updateUser(user);
+        System.out.println("Обновлено");
+    }
+
+    private void deleteUser() {
+        System.out.print("ID: ");
+        long id = Long.parseLong(scanner.nextLine());
+
+        service.deleteUser(id);
+        System.out.println("Удалено");
+    }
+
+    public static void main(String[] args) {
+        new App().start();
+    }
+    static {
+        try {
+            Properties props = new Properties();
+            props.load(App.class.getClassLoader().getResourceAsStream("application.properties"));
+
+            System.setProperty("hibernate.connection.url", props.getProperty("hibernate.connection.url"));
+            System.setProperty("hibernate.connection.username", props.getProperty("hibernate.connection.username"));
+            System.setProperty("hibernate.connection.password", props.getProperty("hibernate.connection.password"));
+
+        } catch (Exception e) {
+            throw new RuntimeException("Не удалось загрузить параметры подключения", e);
         }
     }
 
-    private static void updateUser() {
-
-        System.out.print("ID пользователя для обновления: ");
-        Long id = Long.parseLong(scanner.nextLine());
-
-        Optional<User> userOpt = userDao.findById(id);
-
-        if (userOpt.isEmpty()) {
-            System.out.println("Пользователь не найден");
-            return;
-        }
-
-        User user = userOpt.get();
-
-        System.out.print("Новое имя (пусто — оставить " + user.getName() + "): ");
-        String name = scanner.nextLine();
-        if (!name.isBlank()) user.setName(name);
-
-        System.out.print("Новый email (пусто — оставить " + user.getEmail() + "): ");
-        String email = scanner.nextLine();
-        if (!email.isBlank()) user.setEmail(email);
-
-        System.out.print("Новый возраст (пусто — оставить " + user.getAge() + "): ");
-        String ageStr = scanner.nextLine();
-
-        if (!ageStr.isBlank()) {
-
-            Integer age = null;
-
-            while (age == null) {
-                try {
-                    age = Integer.parseInt(ageStr);
-                } catch (NumberFormatException e) {
-                    System.out.println("\nВозраст должен быть числом.");
-                    System.out.println("1 — ввести возраст заново");
-                    System.out.println("2 — вернуться в меню");
-                    System.out.print("Выберите действие: ");
-
-                    String choice = scanner.nextLine();
-                    if (choice.equals("2")) return;
-
-                    System.out.print("Введите возраст: ");
-                    ageStr = scanner.nextLine();
-                    continue;
-                }
-            }
-
-            user.setAge(age);
-        }
-
-        userDao.update(user);
-
-        System.out.println("Пользователь обновлён: " + user);
-    }
-
-    private static void deleteUser() {
-        System.out.print("ID пользователя для удаления: ");
-        Long id = Long.parseLong(scanner.nextLine());
-
-        userDao.delete(id);
-
-        System.out.println("Операция удаления выполнена.");
-    }
 }

@@ -1,30 +1,26 @@
 package util;
 
-import entity.User;
 import org.hibernate.SessionFactory;
 import org.hibernate.cfg.Configuration;
+import org.apache.log4j.Logger;
 
 public class HibernateUtil {
+
+    private static final Logger log = Logger.getLogger(HibernateUtil.class);
 
     private static final SessionFactory sessionFactory = buildSessionFactory();
 
     private static SessionFactory buildSessionFactory() {
         try {
-            Configuration cfg = new Configuration();
-            cfg.configure("hibernate.cfg.xml");
-            cfg.addAnnotatedClass(User.class);
-            return cfg.buildSessionFactory();
+            log.info("Инициализация Hibernate...");
+            return new Configuration().configure().buildSessionFactory();
         } catch (Exception e) {
-            System.err.println("Ошибка инициализации Hibernate: " + e.getMessage());
-            throw new ExceptionInInitializerError(e);
+            log.error("Ошибка инициализации Hibernate", e);
+            throw new RuntimeException("Ошибка инициализации Hibernate", e);
         }
     }
 
     public static SessionFactory getSessionFactory() {
         return sessionFactory;
-    }
-
-    public static void shutdown() {
-        sessionFactory.close();
     }
 }

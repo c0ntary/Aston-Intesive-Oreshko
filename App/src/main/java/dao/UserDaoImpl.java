@@ -1,17 +1,20 @@
 package dao;
 
 import entity.User;
+import exception.DuplicateEntityException;
+import exception.EntityNotFoundException;
+import exception.ValidationException;
 import util.HibernateUtil;
 import org.hibernate.*;
 import org.hibernate.exception.ConstraintViolationException;
-import org.hibernate.exception.DataException;
-import org.hibernate.exception.JDBCConnectionException;
-import org.hibernate.exception.SQLGrammarException;
+import org.apache.log4j.Logger;
 
 import java.util.List;
 import java.util.Optional;
 
 public class UserDaoImpl implements UserDao {
+
+    private static final Logger log = Logger.getLogger(UserDaoImpl.class);
 
     @Override
     public void create(User user) {
@@ -25,23 +28,11 @@ public class UserDaoImpl implements UserDao {
 
         } catch (ConstraintViolationException e) {
             rollback(tx);
-            throw new RuntimeException("Пользователь с таким email уже существует");
-
-        } catch (JDBCConnectionException e) {
-            rollback(tx);
-            throw new RuntimeException("Нет подключения к базе данных");
-
-        } catch (SQLGrammarException e) {
-            rollback(tx);
-            throw new RuntimeException("Ошибка SQL: таблица users не создана");
-
-        } catch (DataException e) {
-            rollback(tx);
-            throw new RuntimeException("Некорректные данные");
+            throw new DuplicateEntityException("Пользователь с таким email уже существует");
 
         } catch (HibernateException e) {
             rollback(tx);
-            throw new RuntimeException("Ошибка Hibernate");
+            throw new ValidationException("Ошибка при создании пользователя");
         }
     }
 
@@ -50,7 +41,7 @@ public class UserDaoImpl implements UserDao {
         try (Session session = HibernateUtil.getSessionFactory().openSession()) {
             return Optional.ofNullable(session.get(User.class, id));
         } catch (HibernateException e) {
-            throw new RuntimeException("Ошибка при поиске пользователя");
+            throw new ValidationException("Ошибка при поиске пользователя");
         }
     }
 
@@ -59,7 +50,7 @@ public class UserDaoImpl implements UserDao {
         try (Session session = HibernateUtil.getSessionFactory().openSession()) {
             return session.createQuery("from User", User.class).list();
         } catch (HibernateException e) {
-            throw new RuntimeException("Ошибка при получении списка пользователей");
+            throw new ValidationException("Ошибка при получении списка пользователей");
         }
     }
 
@@ -75,11 +66,11 @@ public class UserDaoImpl implements UserDao {
 
         } catch (ConstraintViolationException e) {
             rollback(tx);
-            throw new RuntimeException("Пользователь с таким email уже существует");
+            throw new DuplicateEntityException("Пользователь с таким email уже существует");
 
         } catch (HibernateException e) {
             rollback(tx);
-            throw new RuntimeException("Ошибка при обновлении пользователя");
+            throw new ValidationException("Ошибка при обновлении пользователя");
         }
     }
 
@@ -93,7 +84,7 @@ public class UserDaoImpl implements UserDao {
             User user = session.get(User.class, id);
 
             if (user == null) {
-                throw new RuntimeException("Пользователь не найден");
+                throw new EntityNotFoundException("Пользователь не найден");
             }
 
             session.delete(user);
@@ -101,7 +92,7 @@ public class UserDaoImpl implements UserDao {
 
         } catch (HibernateException e) {
             rollback(tx);
-            throw new RuntimeException("Ошибка при удалении пользователя");
+            throw new ValidationException("Ошибка при удалении пользователя");
         }
     }
 
