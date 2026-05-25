@@ -40,7 +40,9 @@ public class UserController {
 
     @PutMapping("/{id}")
     public UserDto update(@PathVariable Long id, @RequestBody UserRequest req) {
-        return mapper.toDto(service.updateUser(id, mapper.toEntity(req)));
+        service.getUserById(id);
+        User updated = service.updateUser(id, mapper.toEntity(req));
+        return mapper.toDto(updated);
     }
 
     @DeleteMapping("/{id}")
