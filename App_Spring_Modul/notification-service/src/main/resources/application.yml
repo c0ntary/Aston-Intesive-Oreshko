@@ -1,0 +1,17 @@
+server:
+  port: 8081
+
+spring:
+  kafka:
+    bootstrap-servers: ${KAFKA_HOST:kafka}:${KAFKA_PORT:9092}
+
+  mail:
+    host: ${MAIL_HOST:maildev}
+    port: ${MAIL_PORT:1025}
+    properties:
+      mail.smtp.auth: false
+      mail.smtp.starttls.enable: false
+
+logging:
+  level:
+    root: INFO
