@@ -19,7 +19,7 @@ class UserRepositoryTest {
 
     @Container
     private static final PostgreSQLContainer<?> postgres =
-            new PostgreSQLContainer<>("postgres:15")
+            new PostgreSQLContainer<>("postgres:latest")
                     .withDatabaseName("testdb")
                     .withUsername("test")
                     .withPassword("test");
