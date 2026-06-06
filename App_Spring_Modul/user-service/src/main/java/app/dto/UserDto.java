@@ -1,13 +1,25 @@
 package app.dto;
 
+import org.springframework.hateoas.RepresentationModel;
 import java.time.LocalDateTime;
 
-public class UserDto {
+public class UserDto extends RepresentationModel<UserDto> {
+
     private Long id;
     private String name;
     private String email;
     private Integer age;
     private LocalDateTime createdAt;
+
+    public UserDto() {}
+
+    public UserDto(Long id, String name, String email, Integer age, LocalDateTime createdAt) {
+        this.id = id;
+        this.name = name;
+        this.email = email;
+        this.age = age;
+        this.createdAt = createdAt;
+    }
 
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }

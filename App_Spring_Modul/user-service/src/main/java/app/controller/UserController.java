@@ -5,10 +5,13 @@ import app.dto.UserRequest;
 import app.entity.User;
 import app.mapper.UserMapper;
 import app.service.UserService;
+import org.springframework.hateoas.CollectionModel;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+
+import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.*;
 
 @RestController
 @RequestMapping("/api/users")
@@ -25,19 +28,43 @@ public class UserController {
     @PostMapping
     public ResponseEntity<UserDto> create(@RequestBody UserRequest req) {
         User created = service.createUser(mapper.toEntity(req));
-        return ResponseEntity.status(201).body(mapper.toDto(created));
+        UserDto dto = mapper.toDto(created);
+
+        dto.add(linkTo(methodOn(UserController.class).getById(dto.getId())).withSelfRel());
+        dto.add(linkTo(methodOn(UserController.class).getAll()).withRel("all-users"));
+
+        return ResponseEntity.status(201).body(dto);
     }
 
     @GetMapping("/{id}")
     public ResponseEntity<UserDto> getById(@PathVariable("id") Long id) {
-        return ResponseEntity.ok(mapper.toDto(service.getUserById(id)));
+        UserDto dto = mapper.toDto(service.getUserById(id));
+
+        dto.add(linkTo(methodOn(UserController.class).getById(id)).withSelfRel());
+        dto.add(linkTo(methodOn(UserController.class).getAll()).withRel("all-users"));
+        dto.add(linkTo(methodOn(UserController.class).delete(id)).withRel("delete"));
+        dto.add(linkTo(methodOn(UserController.class).update(id, null)).withRel("update"));
+
+        return ResponseEntity.ok(dto);
     }
 
     @GetMapping
-    public ResponseEntity<List<UserDto>> getAll() {
-        return ResponseEntity.ok(
-                service.getAllUsers().stream().map(mapper::toDto).toList()
+    public ResponseEntity<CollectionModel<UserDto>> getAll() {
+        List<UserDto> users = service.getAllUsers()
+                .stream()
+                .map(mapper::toDto)
+                .toList();
+
+        users.forEach(u ->
+                u.add(linkTo(methodOn(UserController.class).getById(u.getId())).withSelfRel())
         );
+
+        CollectionModel<UserDto> model = CollectionModel.of(
+                users,
+                linkTo(methodOn(UserController.class).getAll()).withSelfRel()
+        );
+
+        return ResponseEntity.ok(model);
     }
 
     @PutMapping("/{id}")
@@ -46,7 +73,12 @@ public class UserController {
             @RequestBody UserRequest req
     ) {
         User updated = service.updateUser(id, mapper.toEntity(req));
-        return ResponseEntity.ok(mapper.toDto(updated));
+        UserDto dto = mapper.toDto(updated);
+
+        dto.add(linkTo(methodOn(UserController.class).getById(id)).withSelfRel());
+        dto.add(linkTo(methodOn(UserController.class).getAll()).withRel("all-users"));
+
+        return ResponseEntity.ok(dto);
     }
 
     @DeleteMapping("/{id}")
