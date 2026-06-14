@@ -2,10 +2,10 @@ package app.controller;
 
 import app.dto.UserDto;
 import app.dto.UserRequest;
-import app.entity.User;
-import app.mapper.UserMapper;
+import app.hateoas.UserModelAssembler;
 import app.service.UserService;
 import org.springframework.hateoas.CollectionModel;
+import org.springframework.hateoas.EntityModel;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -18,71 +18,46 @@ import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.*;
 public class UserController {
 
     private final UserService service;
-    private final UserMapper mapper;
+    private final UserModelAssembler assembler;
 
-    public UserController(UserService service, UserMapper mapper) {
+    public UserController(UserService service, UserModelAssembler assembler) {
         this.service = service;
-        this.mapper = mapper;
+        this.assembler = assembler;
     }
 
     @PostMapping
-    public ResponseEntity<UserDto> create(@RequestBody UserRequest req) {
-        User created = service.createUser(mapper.toEntity(req));
-        UserDto dto = mapper.toDto(created);
-
-        dto.add(linkTo(methodOn(UserController.class).getById(dto.getId())).withSelfRel());
-        dto.add(linkTo(methodOn(UserController.class).getAll()).withRel("all-users"));
-
-        return ResponseEntity.status(201).body(dto);
+    public ResponseEntity<EntityModel<UserDto>> create(@RequestBody UserRequest req) {
+        UserDto dto = service.createUser(req);
+        return ResponseEntity
+                .created(linkTo(methodOn(UserController.class).getById(dto.id())).toUri())
+                .body(assembler.toModel(dto));
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<UserDto> getById(@PathVariable("id") Long id) {
-        UserDto dto = mapper.toDto(service.getUserById(id));
-
-        dto.add(linkTo(methodOn(UserController.class).getById(id)).withSelfRel());
-        dto.add(linkTo(methodOn(UserController.class).getAll()).withRel("all-users"));
-        dto.add(linkTo(methodOn(UserController.class).delete(id)).withRel("delete"));
-        dto.add(linkTo(methodOn(UserController.class).update(id, null)).withRel("update"));
-
-        return ResponseEntity.ok(dto);
+    public EntityModel<UserDto> getById(@PathVariable Long id) {
+        return assembler.toModel(service.getUserById(id));
     }
 
     @GetMapping
-    public ResponseEntity<CollectionModel<UserDto>> getAll() {
-        List<UserDto> users = service.getAllUsers()
+    public CollectionModel<EntityModel<UserDto>> getAll() {
+        List<EntityModel<UserDto>> users = service.getAllUsers()
                 .stream()
-                .map(mapper::toDto)
+                .map(assembler::toModel)
                 .toList();
 
-        users.forEach(u ->
-                u.add(linkTo(methodOn(UserController.class).getById(u.getId())).withSelfRel())
-        );
-
-        CollectionModel<UserDto> model = CollectionModel.of(
+        return CollectionModel.of(
                 users,
                 linkTo(methodOn(UserController.class).getAll()).withSelfRel()
         );
-
-        return ResponseEntity.ok(model);
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<UserDto> update(
-            @PathVariable("id") Long id,
-            @RequestBody UserRequest req
-    ) {
-        User updated = service.updateUser(id, mapper.toEntity(req));
-        UserDto dto = mapper.toDto(updated);
-
-        dto.add(linkTo(methodOn(UserController.class).getById(id)).withSelfRel());
-        dto.add(linkTo(methodOn(UserController.class).getAll()).withRel("all-users"));
-
-        return ResponseEntity.ok(dto);
+    public EntityModel<UserDto> update(@PathVariable Long id, @RequestBody UserRequest req) {
+        return assembler.toModel(service.updateUser(id, req));
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> delete(@PathVariable("id") Long id) {
+    public ResponseEntity<Void> delete(@PathVariable Long id) {
         service.deleteUser(id);
         return ResponseEntity.noContent().build();
     }

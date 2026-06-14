@@ -1,9 +1,17 @@
 server:
-  port: 8081
+  port: 8082
 
 spring:
+  application:
+    name: notification-service
+
   kafka:
     bootstrap-servers: ${KAFKA_HOST:kafka}:${KAFKA_PORT:9092}
+    consumer:
+      value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
+      properties:
+        spring.json.value.default.type: app.notification.UserNotificationEvent
+        spring.json.use.type.headers: false
 
   mail:
     host: ${MAIL_HOST:maildev}
@@ -12,6 +20,17 @@ spring:
       mail.smtp.auth: false
       mail.smtp.starttls.enable: false
 
+eureka:
+  client:
+    register-with-eureka: true
+    fetch-registry: true
+    service-url:
+      defaultZone: http://eureka-server:8761/eureka
+
 logging:
   level:
     root: INFO
+
+kafka:
+  topics:
+    user-notifications: user-notifications

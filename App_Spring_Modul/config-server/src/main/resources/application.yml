@@ -1,0 +1,18 @@
+server:
+  port: 8888
+
+spring:
+  application:
+    name: config-server
+
+  cloud:
+    config:
+      server:
+        git:
+          uri: https://github.com/c0ntary/config-repo
+          default-label: main
+
+eureka:
+  client:
+    service-url:
+      defaultZone: http://eureka-server:8761/eureka

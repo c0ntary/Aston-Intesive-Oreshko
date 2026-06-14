@@ -1,0 +1,26 @@
+server:
+  port: 8082
+
+spring:
+  application:
+    name: notification-service
+
+  kafka:
+    bootstrap-servers: kafka:9092
+
+mail:
+  host: maildev
+  port: 1025
+  username: ""
+  password: ""
+  properties:
+    mail:
+      smtp:
+        auth: false
+        starttls:
+          enable: false
+
+eureka:
+  client:
+    service-url:
+      defaultZone: http://eureka-server:8761/eureka

@@ -1,0 +1,11 @@
+spring:
+  cloud:
+    config:
+      allowOverride: true
+      overrideNone: false
+      overrideSystemProperties: false
+
+eureka:
+  client:
+    service-url:
+      defaultZone: http://eureka-server:8761/eureka
