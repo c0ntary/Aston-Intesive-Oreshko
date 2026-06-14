@@ -28,7 +28,13 @@ public class MailService {
     }
 
     private void send(String to, String subject, String text) {
+
+
         try {
+            System.out.println(">>> MAIL SERVICE: sending to=" + to + ", subject=" + subject);
+
+
+
             MimeMessage message = mailSender.createMimeMessage();
             MimeMessageHelper helper = new MimeMessageHelper(message, false, "UTF-8");
 

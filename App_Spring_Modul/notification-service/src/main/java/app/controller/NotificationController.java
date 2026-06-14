@@ -17,13 +17,13 @@ public class NotificationController {
 
     @PostMapping("/created")
     public ResponseEntity<Void> sendCreated(@RequestBody MailRequestDto request) {
-        mailService.sendAccountCreatedEmail(request.getEmail());
+        mailService.sendAccountCreatedEmail(request.email());
         return ResponseEntity.ok().build();
     }
 
     @PostMapping("/deleted")
     public ResponseEntity<Void> sendDeleted(@RequestBody MailRequestDto request) {
-        mailService.sendAccountDeletedEmail(request.getEmail());
+        mailService.sendAccountDeletedEmail(request.email());
         return ResponseEntity.ok().build();
     }
 }
